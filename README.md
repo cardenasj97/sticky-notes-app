@@ -67,12 +67,16 @@ src/
   utils/
     geometry.ts            Pure rect/point math
     storage.ts             Schema-guarded localStorage store (used by the API)
-  components/
-    Board.tsx              Canvas: drag-to-create, renders notes + trash
-    StickyNote.tsx         Move / resize / edit / color / trash detection
-    Toolbar.tsx            New-note color palette + usage hint
-    TrashZone.tsx          Drop target
+  components/              Each component is a folder: index.tsx + types.ts
+    Board/                 Canvas: drag-to-create, renders notes + trash
+    StickyNote/            Move / resize / edit / color / trash detection
+    Toolbar/               New-note color palette + usage hint
+    TrashZone/             Drop target
+e2e/
+  board.spec.ts            Playwright cross-browser e2e suite (Firefox + Edge)
 ```
+
+Unit tests (Vitest) are co-located with their source (`*.test.ts` / `*.test.tsx`).
 
 ## Build & run
 
@@ -84,6 +88,7 @@ npm run dev      # start the dev server (http://localhost:5173)
 npm run build    # type-check (strict) + production build
 npm run preview  # preview the production build
 npm run test     # run unit tests (Vitest)
+npm run test:e2e # run cross-browser e2e tests (Playwright)
 ```
 
 ## Browser support / target
