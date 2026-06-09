@@ -16,6 +16,16 @@ npx vitest run -t "clamps"                   # run tests matching a name
 
 `npm run build` runs the type-checker, so a type error fails the build. Tests live next to their source (`*.test.ts`).
 
+## Commits
+
+Commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/) spec:
+
+    <type>(<optional scope>): <description>
+
+Use one of these types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`,
+`test`, `build`, `ci`, `chore`, `revert`. Keep the description in the imperative
+mood and lowercase. Example: `feat(board): add drag-to-create gesture`.
+
 ## Architecture
 
 A from-scratch sticky-notes board — React 19 + TypeScript + Vite. No drag-and-drop, UI-component, or color-picker libraries; all gestures are built on the Pointer Events API.

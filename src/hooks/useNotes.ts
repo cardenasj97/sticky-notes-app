@@ -1,9 +1,10 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import type { Dispatch } from 'react';
 import type { Note, Position, Size } from '../types';
-import { loadNotes, saveNotes } from '../utils/storage';
+import { fetchNotes, persistNotes } from '../api/notesApi';
 
 export type NotesAction =
+  | { type: 'hydrate'; notes: Note[] }
   | { type: 'add'; note: Omit<Note, 'id' | 'zIndex'> }
   | { type: 'move'; id: string; position: Position }
   | { type: 'resize'; id: string; rect: Position & Size }
@@ -14,12 +15,19 @@ export type NotesAction =
 
 export type NotesDispatch = Dispatch<NotesAction>;
 
+/** Reflects the async persistence layer so the UI can show load/save feedback. */
+export type NotesStatus = 'loading' | 'saving' | 'ready';
+
+const SAVE_DEBOUNCE_MS = 300;
+
 const nextZIndex = (notes: Note[]): number =>
   notes.reduce((max, note) => Math.max(max, note.zIndex), 0) + 1;
 
 /** Pure reducer — exported so it can be unit-tested without React. */
 export const notesReducer = (state: Note[], action: NotesAction): Note[] => {
   switch (action.type) {
+    case 'hydrate':
+      return action.notes;
     case 'add':
       return [
         ...state,
@@ -54,12 +62,43 @@ export const notesReducer = (state: Note[], action: NotesAction): Note[] => {
   }
 };
 
-export const useNotes = (): { notes: Note[]; dispatch: NotesDispatch } => {
-  const [notes, dispatch] = useReducer(notesReducer, undefined, loadNotes);
+export const useNotes = (): {
+  notes: Note[];
+  dispatch: NotesDispatch;
+  status: NotesStatus;
+} => {
+  const [notes, dispatch] = useReducer(notesReducer, []);
+  const [status, setStatus] = useState<NotesStatus>('loading');
 
+  // The exact notes reference that already lives on the "server". Used to skip
+  // the redundant save triggered by the hydrate render (and to never write the
+  // initial empty array before the async load has completed).
+  const lastLoadedRef = useRef<Note[] | null>(null);
+
+  // Initial async load from the mock API.
   useEffect(() => {
-    saveNotes(notes);
+    let active = true;
+    fetchNotes().then((loaded) => {
+      if (!active) return;
+      lastLoadedRef.current = loaded;
+      dispatch({ type: 'hydrate', notes: loaded });
+      setStatus('ready');
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Debounced async save on every change, gated until after hydration.
+  useEffect(() => {
+    if (lastLoadedRef.current === null) return; // not loaded yet
+    if (notes === lastLoadedRef.current) return; // hydrate render, nothing new
+    setStatus('saving');
+    const timer = setTimeout(() => {
+      persistNotes(notes).then(() => setStatus('ready'));
+    }, SAVE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
   }, [notes]);
 
-  return { notes, dispatch };
+  return { notes, dispatch, status };
 };

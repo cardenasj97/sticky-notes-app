@@ -21,17 +21,23 @@ the Pointer Events API — no drag-and-drop or UI component libraries are used.
 - Per-note colors (palette on the note, shown on hover) and a toolbar palette that
   sets the color of the next note created.
 - Bring-to-front on interaction (z-index stacking for overlapping notes).
-- Persistence to `localStorage`, restored on page load.
+- Persistence through an **async mock REST API** (`localStorage`-backed), with a
+  live load/save status indicator; notes are restored on page load.
 
 ## Architecture
 
 State is a single `Note[]` owned by a `useReducer` inside the `useNotes` hook. The
 reducer is a pure, exported function (`notesReducer`) covering every mutation —
-`add | move | resize | updateText | setColor | bringToFront | remove` — which keeps
-the data layer fully unit-testable in isolation from React. Persistence is a thin,
-schema-guarded `localStorage` wrapper: the state is hydrated through the reducer's
-lazy initializer and saved via a single `useEffect`, so corrupt or outdated stored
-data degrades gracefully to an empty board instead of crashing.
+`hydrate | add | move | resize | updateText | setColor | bringToFront | remove` —
+which keeps the data layer fully unit-testable in isolation from React.
+Persistence goes through an async mock REST client (`src/api/notesApi.ts`):
+`fetchNotes`/`persistNotes` return Promises with realistic latency, backed by a
+thin, schema-guarded `localStorage` store so data survives reloads and corrupt or
+outdated data degrades gracefully to an empty board. `useNotes` loads
+asynchronously on mount (dispatching `hydrate`) and saves on change via a debounced
+effect; a reference-equality gate skips the redundant save the hydrate render would
+otherwise trigger, so loading never writes the initial empty array back over stored
+notes. A `status` value (`loading | saving | ready`) drives the header indicator.
 
 All gestures share one primitive, `usePointerDrag`, which captures the pointer and
 tracks `pointermove`/`pointerup` on `window` so a drag continues even when the cursor
@@ -53,12 +59,14 @@ regardless of how many notes are on the board.
 ```
 src/
   types.ts                 Shared types + constants (Note, palette, sizes)
+  api/
+    notesApi.ts            Async mock REST client (fetch/persist)
   hooks/
-    useNotes.ts            Reducer + localStorage persistence
+    useNotes.ts            Reducer + async load/save orchestration + status
     usePointerDrag.ts      Shared pointer-gesture primitive
   utils/
     geometry.ts            Pure rect/point math
-    storage.ts             Schema-guarded localStorage load/save
+    storage.ts             Schema-guarded localStorage store (used by the API)
   components/
     Board.tsx              Canvas: drag-to-create, renders notes + trash
     StickyNote.tsx         Move / resize / edit / color / trash detection
