@@ -1,8 +1,4 @@
-import type { Ref } from 'react';
-
-interface TrashZoneProps {
-  ref?: Ref<HTMLDivElement>;
-}
+import type { TrashZoneProps } from './types';
 
 /**
  * Drop target for deletion. The dragged note toggles the `trash-zone--active`

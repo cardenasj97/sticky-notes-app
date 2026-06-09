@@ -1,18 +1,13 @@
 import { useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import type { Note, Position, Rect } from '../types';
-import { MIN_NOTE_SIZE } from '../types';
-import type { NotesDispatch } from '../hooks/useNotes';
-import { usePointerDrag } from '../hooks/usePointerDrag';
-import { normalizeRect } from '../utils/geometry';
-import { StickyNote } from './StickyNote';
-import { TrashZone } from './TrashZone';
-
-interface BoardProps {
-  notes: Note[];
-  dispatch: NotesDispatch;
-  activeColor: string;
-}
+import type { Position, Rect } from '../../types';
+import { MIN_NOTE_SIZE } from '../../types';
+import { usePointerDrag } from '../../hooks/usePointerDrag';
+import { normalizeRect } from '../../utils/geometry';
+import { StickyNote } from '../StickyNote';
+import { TrashZone } from '../TrashZone';
+import type { BoardProps } from './types';
+import { toBoardCoords } from './utils';
 
 export function Board({ notes, dispatch, activeColor }: BoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
@@ -23,21 +18,18 @@ export function Board({ notes, dispatch, activeColor }: BoardProps) {
   const startRef = useRef<Position | null>(null);
   const draftRef = useRef<Rect | null>(null);
 
-  const toBoardCoords = (clientX: number, clientY: number): Position => {
-    const rect = boardRef.current?.getBoundingClientRect();
-    return { x: clientX - (rect?.left ?? 0), y: clientY - (rect?.top ?? 0) };
-  };
-
   const startCreate = usePointerDrag({
     onStart: ({ start }) => {
-      const origin = toBoardCoords(start.x, start.y);
+      const rect = boardRef.current?.getBoundingClientRect() ?? null;
+      const origin = toBoardCoords(start.x, start.y, rect);
       startRef.current = origin;
       draftRef.current = { ...origin, width: 0, height: 0 };
       setDraft(draftRef.current);
     },
     onMove: ({ current }) => {
       if (!startRef.current) return;
-      const next = normalizeRect(startRef.current, toBoardCoords(current.x, current.y));
+      const rect = boardRef.current?.getBoundingClientRect() ?? null;
+      const next = normalizeRect(startRef.current, toBoardCoords(current.x, current.y, rect));
       draftRef.current = next;
       setDraft(next);
     },

@@ -1,17 +1,11 @@
 import { memo, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
-import type { Note, Rect } from '../types';
-import { MIN_NOTE_SIZE, NOTE_COLORS } from '../types';
-import type { NotesDispatch } from '../hooks/useNotes';
-import { usePointerDrag } from '../hooks/usePointerDrag';
-import { clamp, clampRectToBounds, rectsIntersect } from '../utils/geometry';
-
-interface StickyNoteProps {
-  note: Note;
-  dispatch: NotesDispatch;
-  boardRef: RefObject<HTMLDivElement | null>;
-  trashRef: RefObject<HTMLDivElement | null>;
-}
+import type { PointerEvent as ReactPointerEvent } from 'react';
+import type { Rect } from '../../types';
+import { MIN_NOTE_SIZE, NOTE_COLORS } from '../../types';
+import { usePointerDrag } from '../../hooks/usePointerDrag';
+import { clamp, clampRectToBounds } from '../../utils/geometry';
+import type { StickyNoteProps } from './types';
+import { isOverTrash } from './utils';
 
 function StickyNoteComponent({ note, dispatch, boardRef, trashRef }: StickyNoteProps) {
   // Transient rect applied only to this note during an active gesture.
@@ -37,18 +31,7 @@ function StickyNoteComponent({ note, dispatch, boardRef, trashRef }: StickyNoteP
     const trash = trashRef.current;
     const trashRect = trashRectRef.current;
     if (!board || !trash || !trashRect) return;
-    const clientRect: Rect = {
-      x: board.left + rect.x,
-      y: board.top + rect.y,
-      width: rect.width,
-      height: rect.height,
-    };
-    const over = rectsIntersect(clientRect, {
-      x: trashRect.left,
-      y: trashRect.top,
-      width: trashRect.width,
-      height: trashRect.height,
-    });
+    const over = isOverTrash(rect, board, trashRect);
     overTrashRef.current = over;
     trash.classList.toggle('trash-zone--active', over);
   };

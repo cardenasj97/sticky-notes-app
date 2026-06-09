@@ -1,9 +1,5 @@
-import { NOTE_COLORS } from '../types';
-
-interface ToolbarProps {
-  activeColor: string;
-  onColorChange: (color: string) => void;
-}
+import { NOTE_COLORS } from '../../types';
+import type { ToolbarProps } from './types';
 
 export function Toolbar({ activeColor, onColorChange }: ToolbarProps) {
   return (

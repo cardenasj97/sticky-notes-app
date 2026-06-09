@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    setupFiles: ['./src/test/setup.ts'],
     // Keep Vitest to the unit suite; Playwright owns the e2e/*.spec.ts files.
     // `.tsx` is included so React component/integration tests are picked up.
     include: ['src/**/*.test.{ts,tsx}'],
